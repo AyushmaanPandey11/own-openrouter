@@ -11,3 +11,85 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id                  Int           @unique @default(autoincrement())
+  email               String        @unique
+  fullname            String
+  password            String
+  credits             Int           @default(0)
+  apiKeys             ApiKey[]
+  onRampTransactions  OnRampTransaction[]
+  conversations       Converstion[]
+}
+
+model ApiKey {
+  id                  Int             @unique @default(autoincrement())
+  userId              Int
+  name                String
+  apikey              String          @unique
+  isDisabled          boolean         @default(false)
+  isDeleted           boolean         @default(false)
+  conversations       Conversation[]
+  user                User            @relation(fields: [userId], references: [id] )
+}
+
+model OnRampTransaction {
+  id                  Int             @unique @default(autoincrement())
+  userId              Int
+  amount              Int     
+  status              Status
+  user                User            @relation(fields: [userId], references: [id] )
+}
+
+enum Status {
+  SUCCESS   
+  FAILED
+  PROCESSING
+}
+
+model Company {
+  id                  Int             @unique @default(autoincrement())
+  name                String
+  website             String
+  models              Model[]
+}
+
+model Model {
+  id                    Int             @unique @default(autoincrement())
+  name                  String          @unique
+  slug                  String          @unique
+  companyId             Int
+  company               Company         @relation(fields: [companyId], references: [id] )
+  modelProviderMappings ModelProviderMapping[]
+}
+
+model Provider {
+  id                    Int             @unique @default(autoincrement())
+  name                  String          @unique
+  website               String          @unique
+  modelProviderMappings ModelProviderMapping[]
+}
+
+model ModelProviderMapping {
+  id                  Int               @unique @default(autoincrement())
+  modelId             Int
+  providerId          Int
+  inputTokenCost      Int
+  outputTokenCost     Int
+  conversations       Conversation[]
+  model               Model            @relation(fields: [modelId], references: [id] )
+  provider            Provider         @relation(fields: [providerId], references: [id] )
+}
+
+model Conversation {
+  id                      Int             @unique @default(autoincrement())
+  userId                  Int
+  apiKeyId                Int
+  input                   String
+  output                  String
+  inputTokenCount         Int
+  outputTokenCount        Int
+  modelProviderMappingId  Int
+  modelProviderMapping    ModelProviderMapping  @relation(fields: [modelProviderMappingId], references: [id])    
+}
