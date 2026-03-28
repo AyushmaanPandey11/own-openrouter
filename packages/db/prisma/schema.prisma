@@ -15,12 +15,12 @@ datasource db {
 model User {
   id                  Int           @unique @default(autoincrement())
   email               String        @unique
-  fullname            String
+  username            String
   password            String
   credits             Int           @default(0)
   apiKeys             ApiKey[]
   onRampTransactions  OnRampTransaction[]
-  conversations       Converstion[]
+  conversations       Conversation[]
 }
 
 model ApiKey {
@@ -28,8 +28,8 @@ model ApiKey {
   userId              Int
   name                String
   apikey              String          @unique
-  isDisabled          boolean         @default(false)
-  isDeleted           boolean         @default(false)
+  isDisabled          Boolean         @default(false)
+  isDeleted           Boolean         @default(false)
   conversations       Conversation[]
   user                User            @relation(fields: [userId], references: [id] )
 }
@@ -91,5 +91,7 @@ model Conversation {
   inputTokenCount         Int
   outputTokenCount        Int
   modelProviderMappingId  Int
-  modelProviderMapping    ModelProviderMapping  @relation(fields: [modelProviderMappingId], references: [id])    
+  modelProviderMapping    ModelProviderMapping  @relation(fields: [modelProviderMappingId], references: [id])
+  user                    User                  @relation(fields: [userId], references:[id])
+  apiKey                  ApiKey                @relation(fields: [apiKeyId], references:[id])
 }
