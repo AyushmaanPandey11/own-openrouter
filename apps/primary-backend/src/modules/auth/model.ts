@@ -7,11 +7,11 @@ export const AuthModel = {
   }),
 
   signInResponseSchema: t.Object({
-    id: t.Number(),
+    id: t.String(),
     token: t.String(),
   }),
 
-  signInInvalid: t.Literal("Invalid username or password"),
+  signInInvalid: t.String(),
 
   signUpSchema: t.Object({
     username: t.String(),
@@ -20,7 +20,7 @@ export const AuthModel = {
   }),
 
   signUpResponseSchema: t.Object({
-    id: t.Number(),
+    id: t.String(),
   }),
 
   signUpInValid: t.Literal("Invalid credentials"),

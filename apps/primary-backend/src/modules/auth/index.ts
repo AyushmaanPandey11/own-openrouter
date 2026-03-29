@@ -1,14 +1,21 @@
 import { Elysia } from "elysia";
 import { AuthModel } from "./model";
 import { AuthService } from "./service";
+import jwt from "@elysiajs/jwt";
 
 export const auth = new Elysia({ prefix: "/auth" })
+  .use(
+    jwt({
+      name: "jwt",
+      secret: process.env.JWT_SECRET!,
+      exp: "7d",
+    }),
+  )
   .post(
     "/sign-up",
     async ({ body }) => {
       const { email, password, username } = body;
       const response = await AuthService.SignUp({ email, password, username });
-
       return response;
     },
     {
@@ -21,10 +28,27 @@ export const auth = new Elysia({ prefix: "/auth" })
   )
   .post(
     "sign-in",
-    async ({ body }) => {
+    async ({ jwt, body, set }) => {
       const { password, username } = body;
-      const response = await AuthService.SignIn({ username, password });
-      return response;
+      const { isCorrect, message, userId } = await AuthService.SignIn({
+        username,
+        password,
+      });
+
+      if (!isCorrect) {
+        set.status = 400;
+        return {
+          message,
+        } as any;
+      } else {
+        const token = await jwt.sign({
+          id: userId,
+        });
+        return {
+          token,
+          message,
+        };
+      }
     },
     {
       body: AuthModel.signInSchema,

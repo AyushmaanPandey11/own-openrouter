@@ -1,9 +1,15 @@
 import { prisma } from "db";
 import type { AuthModel } from "./model";
-import { status } from "elysia";
 
 export abstract class AuthService {
-  static async SignIn({ username, password }: AuthModel["signInSchema"]) {
+  static async SignIn({
+    username,
+    password,
+  }: AuthModel["signInSchema"]): Promise<{
+    isCorrect: Boolean;
+    userId: string;
+    message: string;
+  }> {
     const response = await prisma.user.findFirst({
       where: {
         username: username,
@@ -15,22 +21,25 @@ export abstract class AuthService {
     });
 
     if (response == null) {
-      throw status(
-        40,
-        "Invalid credentials" satisfies AuthModel["signUpInValid"],
-      );
+      return {
+        isCorrect: false,
+        userId: "",
+        message: "User doesn't exists!",
+      };
     }
 
-    if (await Bun.password.verify(password, response.password)) {
-      throw status(
-        400,
-        "Invalid credentials" satisfies AuthModel["signUpInValid"],
-      );
+    if (!(await Bun.password.verify(password, response.password))) {
+      return {
+        isCorrect: false,
+        userId: "",
+        message: "Invalid credentials",
+      };
     }
 
     return {
-      id: response?.id,
-      token: "token123",
+      isCorrect: true,
+      userId: response.id.toString(),
+      message: "User signed in successfully",
     };
   }
 
@@ -42,12 +51,12 @@ export abstract class AuthService {
     const response = await prisma.user.create({
       data: {
         email: email,
-        password: password,
+        password: await Bun.password.hash(password),
         username: username,
       },
     });
     return {
-      id: response.id,
+      id: response.id.toString(),
       message: "User created successfully",
     };
   }
