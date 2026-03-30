@@ -30,6 +30,8 @@ model ApiKey {
   apikey              String          @unique
   isDisabled          Boolean         @default(false)
   isDeleted           Boolean         @default(false)
+  lastUsed            DateTime?
+  creditsConsumed     Int             @default(0)
   conversations       Conversation[]
   user                User            @relation(fields: [userId], references: [id] )
 }
