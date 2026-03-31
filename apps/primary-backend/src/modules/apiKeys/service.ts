@@ -9,7 +9,7 @@ export abstract class ApiKeyService {
   static generateApiKey() {
     let suffixKey = "";
     for (let idx = 0; idx < API_KEY_LENGTH; idx++) {
-      suffixKey += API_KEY_SET[Math.random() * 10];
+      suffixKey += API_KEY_SET[Math.floor(Math.random() * API_KEY_SET.length)];
     }
     return `sk-or-v1-${suffixKey}`;
   }
@@ -39,6 +39,7 @@ export abstract class ApiKeyService {
     const data = await prisma.apiKey.findMany({
       where: {
         userId,
+        isDeleted: true,
       },
       select: {
         id: true,
@@ -46,6 +47,7 @@ export abstract class ApiKeyService {
         name: true,
         lastUsed: true,
         creditsConsumed: true,
+        isDisabled: true,
       },
     });
 
@@ -54,19 +56,32 @@ export abstract class ApiKeyService {
         id: key.id.toString(),
         apiKey: key.apikey,
         name: key.name,
-        lastUsed: key.lastUsed?.toString(),
-        creditsConsumed: key.creditsConsumed.toString(),
+        lastUsed: key.lastUsed!,
+        creditsConsumed: key.creditsConsumed,
+        isDisabled: key.isDisabled,
       })),
     };
   }
 
-  static async disableKey(
+  static async updateApiKey(userId: number, id: number, isDisabled: boolean) {
+    await prisma.apiKey.update({
+      data: {
+        isDisabled,
+      },
+      where: {
+        userId,
+        id,
+      },
+    });
+  }
+
+  static async enableKey(
     userId: number,
     id: number,
-  ): Promise<{ isDisabled: boolean }> {
+  ): Promise<{ isEnabled: boolean }> {
     const updatedData = await prisma.apiKey.update({
       data: {
-        isDisabled: true,
+        isDisabled: false,
       },
       where: {
         userId,
@@ -74,15 +89,12 @@ export abstract class ApiKeyService {
       },
     });
     return {
-      isDisabled: updatedData.isDisabled,
+      isEnabled: updatedData.isDisabled,
     };
   }
 
-  static async deleteKey(
-    userId: number,
-    id: number,
-  ): Promise<{ isDeleted: boolean }> {
-    const updatedData = await prisma.apiKey.update({
+  static async deleteKey(userId: number, id: number) {
+    await prisma.apiKey.update({
       data: {
         isDeleted: true,
       },
@@ -91,8 +103,5 @@ export abstract class ApiKeyService {
         id,
       },
     });
-    return {
-      isDeleted: updatedData.isDeleted,
-    };
   }
 }

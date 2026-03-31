@@ -52,46 +52,53 @@ export const apiKey = new Elysia({ prefix: "/api-keys" })
       },
     },
   )
-  .post(
-    "/disable",
+  .put(
+    "/update",
     async ({ userId, body, set }) => {
-      const { isDisabled } = await ApiKeyService.disableKey(
-        Number(userId),
-        Number(body.id),
-      );
-
-      if (isDisabled) {
+      try {
+        await ApiKeyService.updateApiKey(
+          Number(userId),
+          Number(body.id),
+          body.isDisabled,
+        );
         return {
-          message: "Api Key disabled Successfully!",
+          message: "Api Key updated Successfully!",
         };
-      } else {
-        set.status = 400;
+      } catch (error) {
+        set.status = 411;
         return {
-          message: "Issue in disabling the key",
+          message: "Api Key updated unsuccessfull",
         } as any;
       }
     },
     {
-      body: ApikeysModel.disableApiKeySchema,
+      body: ApikeysModel.updateApiKeySchema,
       response: {
-        200: ApikeysModel.disableApiKeyResponseSchema,
+        200: ApikeysModel.updateApiKeyResponseSchema,
+        411: ApikeysModel.updateApiKeyResponseFailedSchema,
       },
     },
   )
-  .delete("/:id", async ({ params, userId, set }) => {
-    const { isDeleted } = await ApiKeyService.deleteKey(
-      Number(userId),
-      Number(params.id),
-    );
-
-    if (isDeleted) {
-      return {
-        message: "Api Key deleted Successfully!",
-      };
-    } else {
-      set.status = 400;
-      return {
-        message: "Issue in deleting the key",
-      } as any;
-    }
-  });
+  .delete(
+    "/:id",
+    async ({ params, userId, set }) => {
+      try {
+        await ApiKeyService.deleteKey(Number(userId), Number(params.id));
+        return {
+          message: "Api Key deleted Successfully!",
+        };
+      } catch (error) {
+        set.status = 411;
+        return {
+          message: "Api Key updated unsuccessfull",
+        } as any;
+      }
+    },
+    {
+      body: ApikeysModel.deleteApiKeySchema,
+      response: {
+        200: ApikeysModel.deleteApiKeyResponseSchema,
+        411: ApikeysModel.updateApiKeyResponseFailedSchema,
+      },
+    },
+  );

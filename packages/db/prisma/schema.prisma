@@ -17,7 +17,7 @@ model User {
   email               String        @unique
   username            String
   password            String
-  credits             Int           @default(0)
+  credits             Int           @default(100)
   apiKeys             ApiKey[]
   onRampTransactions  OnRampTransaction[]
   conversations       Conversation[]

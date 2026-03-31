@@ -17,18 +17,36 @@ export const ApikeysModel = {
         id: t.String(),
         name: t.String(),
         apiKey: t.String(),
-        lastUsed: t.Optional(t.String()),
-        creditsConsumed: t.String(),
+        lastUsed: t.Nullable(t.Date()),
+        creditsConsumed: t.Number(),
+        isDisabled: t.Boolean(),
       }),
     ),
   }),
 
-  disableApiKeySchema: t.Object({
+  updateApiKeySchema: t.Object({
+    id: t.String(),
+    isDisabled: t.Boolean(),
+  }),
+
+  updateApiKeyResponseSchema: t.Object({
+    message: t.Literal("Api Key updated Successfully!"),
+  }),
+
+  updateApiKeyResponseFailedSchema: t.Object({
+    message: t.Literal("Api Key updated unsuccessfull"),
+  }),
+
+  deleteApiKeySchema: t.Object({
     id: t.String(),
   }),
 
-  disableApiKeyResponseSchema: t.Object({
-    message: t.Literal("Api Key disabled Successfully!"),
+  deleteApiKeyResponseSchema: t.Object({
+    message: t.Literal("Api Key deleted Successfully!"),
+  }),
+
+  deleteApiKeyResponseFailedSchema: t.Object({
+    message: t.Literal("Api Key deletion unsuccessfull"),
   }),
 };
 

@@ -5,6 +5,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts"
   },
+  "exports": {
+    ".": "./src/app.ts"
+  },
   "dependencies": {
     "@elysiajs/jwt": "^1.4.1",
     "db": "*",
