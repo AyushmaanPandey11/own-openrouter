@@ -60,4 +60,16 @@ export abstract class AuthService {
       message: "User created successfully",
     };
   }
+
+  static async getUserDetails(userId: number) {
+    const result = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        credits: true,
+      },
+    });
+    return result;
+  }
 }

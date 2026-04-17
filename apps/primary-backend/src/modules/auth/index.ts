@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { AuthModel } from "./model";
 import { AuthService } from "./service";
 import jwt from "@elysiajs/jwt";
+import { authMiddleware } from "../authMiddleware";
 
 export const auth = new Elysia({ prefix: "/auth" })
   .use(
@@ -55,6 +56,28 @@ export const auth = new Elysia({ prefix: "/auth" })
       response: {
         200: AuthModel.signInResponseSchema,
         400: AuthModel.signInInvalid,
+      },
+    },
+  )
+  .resolve(authMiddleware)
+  .get(
+    "/profile",
+    async ({ userId, set }) => {
+      const userData = await AuthService.getUserDetails(Number(userId));
+      if (!userData) {
+        set.status = 400;
+        return {
+          message: "Error while fetching user details",
+        };
+      }
+      return {
+        credits: userData.credits,
+      };
+    },
+    {
+      response: {
+        200: AuthModel.profileResponseSchema,
+        400: AuthModel.profileFailedResponseSchema,
       },
     },
   );

@@ -23,6 +23,14 @@ export const AuthModel = {
     id: t.String(),
   }),
 
+  profileResponseSchema: t.Object({
+    credits: t.Number(),
+  }),
+
+  profileFailedResponseSchema: t.Object({
+    message: t.Literal("Error while fetching user details"),
+  }),
+
   signUpInValid: t.Literal("Invalid credentials"),
 } as const;
 
