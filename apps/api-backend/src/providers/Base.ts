@@ -8,6 +8,8 @@ export type LlmResponse = {
       };
     }[];
   };
+  inputTokenConsumed: number;
+  outputTokenConsumed: number;
 };
 
 export interface BaseLlm {

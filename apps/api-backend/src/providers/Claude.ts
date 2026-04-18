@@ -38,6 +38,8 @@ export class Claude implements BaseLlm {
           },
         ],
       },
+      inputTokenConsumed: response.usage.input_tokens!,
+      outputTokenConsumed: response.usage.output_tokens!,
     };
   }
 }

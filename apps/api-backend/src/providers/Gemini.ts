@@ -37,6 +37,8 @@ export class Gemini implements BaseLlm {
           },
         ],
       },
+      inputTokenConsumed: response.usageMetadata?.candidatesTokenCount!,
+      outputTokenConsumed: response.usageMetadata?.promptTokenCount!,
     };
   }
 }

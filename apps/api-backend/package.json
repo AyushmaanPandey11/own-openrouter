@@ -10,7 +10,8 @@
     "@elysiajs/bearer": "^1.4.3",
     "@google/genai": "^1.50.1",
     "elysia": "latest",
-    "openai": "^6.34.0"
+    "openai": "^6.34.0",
+    "db": "*"
   },
   "devDependencies": {
     "bun-types": "latest"
