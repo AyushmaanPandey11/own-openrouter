@@ -5,6 +5,7 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
+    "dotenv": "^17.4.2",
     "prisma": "^7.5.0"
   },
   "peerDependencies": {
@@ -12,6 +13,9 @@
   },
   "exports": {
     ".": "./index.ts"
+  },
+  "scripts": {
+    "seed:db": "bun --bun run ./seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.6.0",

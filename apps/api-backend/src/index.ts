@@ -6,6 +6,8 @@ import { Claude } from "./providers/Claude";
 import { OpenAi as OpenAiLlm } from "./providers/OpenAi";
 import { prisma } from "db";
 import { ModelName } from "../../../packages/db/generated/prisma/internal/prismaNamespace";
+import { LlmResponse } from "./providers/Base";
+import { responseToSetHeaders } from "elysia/adapter/utils";
 const app = new Elysia()
   .use(bearer())
   .post(
@@ -23,6 +25,7 @@ const app = new Elysia()
         },
         select: {
           user: true,
+          id: true,
         },
       });
 
@@ -42,43 +45,67 @@ const app = new Elysia()
 
       const modelDb = await prisma.model.findFirst({
         where: {
-          slug: model,
+          slug: providerModelName,
         },
       });
 
       if (!modelDb) {
         set.status = 403;
         return {
-          message: `${model} model isn't available`,
+          message: `${providerModelName} model isn't available`,
         };
       }
 
-      const providers = await prisma.modelProviderMapping.findFirst({
+      const modelProviderMapping = await prisma.modelProviderMapping.findFirst({
         where: {
           modelId: modelDb.id,
         },
       });
 
-      if (!providers) {
+      if (!modelProviderMapping) {
         set.status = 403;
         return {
           message: `${ModelName} provider isn't available`,
         };
       }
-
+      let response: LlmResponse;
       switch (providerName) {
         case inputProviderName.Anthropic:
-          return await Claude.getInstance().chat(providerModelName, messages);
-        case inputProviderName.Gemini:
-          return await Gemini.getInstance().chat(providerModelName, messages);
-        case inputProviderName.Openai:
-          return await OpenAiLlm.getInstance().chat(
+          response = await Claude.getInstance().chat(
             providerModelName,
             messages,
           );
+          break;
+        case inputProviderName.Gemini:
+          response = await Gemini.getInstance().chat(
+            providerModelName,
+            messages,
+          );
+          break;
+        case inputProviderName.Openai:
+          response = await OpenAiLlm.getInstance().chat(
+            providerModelName,
+            messages,
+          );
+          break;
         default:
-          return await Claude.getInstance().chat(providerModelName, messages);
+          response = await Gemini.getInstance().chat(
+            providerModelName,
+            messages,
+          );
       }
+      // storing the conversation in the conversation table
+      const conversation = await prisma.conversation.create({
+        data: {
+          input: messages[0].content,
+          inputTokenCount: response.inputTokenConsumed,
+          outputTokenCount: response.outputTokenConsumed,
+          output: response.completions.choices[0].message.content,
+          apiKeyId: doesExists.id,
+          userId: doesExists.user.id,
+          modelProviderMappingId: modelProviderMapping.id,
+        },
+      });
     },
     {
       body: ChatRequestSchema,

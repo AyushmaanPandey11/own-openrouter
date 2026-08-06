@@ -4,7 +4,7 @@ export type LlmResponse = {
   completions: {
     choices: {
       message: {
-        content: String;
+        content: string;
       };
     }[];
   };
