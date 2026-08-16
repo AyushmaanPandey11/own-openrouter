@@ -9,9 +9,10 @@
     "@anthropic-ai/sdk": "^0.90.0",
     "@elysiajs/bearer": "^1.4.3",
     "@google/genai": "^1.50.1",
+    "crypto": "^1.0.1",
+    "db": "*",
     "elysia": "latest",
-    "openai": "^6.34.0",
-    "db": "*"
+    "openai": "^6.34.0"
   },
   "devDependencies": {
     "bun-types": "latest"

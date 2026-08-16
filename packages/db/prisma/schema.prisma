@@ -24,16 +24,19 @@ model User {
 }
 
 model ApiKey {
-  id                  Int             @unique @default(autoincrement())
+  id                  Int             @id @default(autoincrement())
   userId              Int
   name                String
-  apikey              String          @unique
+  keyHash             String          @unique
+  keyPrefix           String
   isDisabled          Boolean         @default(false)
   isDeleted           Boolean         @default(false)
   lastUsed            DateTime?
   creditsConsumed     Int             @default(0)
   conversations       Conversation[]
-  user                User            @relation(fields: [userId], references: [id] )
+  user                User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model OnRampTransaction {

@@ -7,7 +7,7 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "credits" INTEGER NOT NULL DEFAULT 0
+    "credits" INTEGER NOT NULL DEFAULT 100
 );
 
 -- CreateTable
@@ -15,9 +15,14 @@ CREATE TABLE "ApiKey" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
-    "apikey" TEXT NOT NULL,
+    "keyHash" TEXT NOT NULL,
+    "keyPrefix" TEXT NOT NULL,
     "isDisabled" BOOLEAN NOT NULL DEFAULT false,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT false
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "lastUsed" TIMESTAMP(3),
+    "creditsConsumed" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "ApiKey_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -78,10 +83,10 @@ CREATE UNIQUE INDEX "User_id_key" ON "User"("id");
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ApiKey_id_key" ON "ApiKey"("id");
+CREATE UNIQUE INDEX "ApiKey_keyHash_key" ON "ApiKey"("keyHash");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ApiKey_apikey_key" ON "ApiKey"("apikey");
+CREATE INDEX "ApiKey_userId_idx" ON "ApiKey"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "OnRampTransaction_id_key" ON "OnRampTransaction"("id");

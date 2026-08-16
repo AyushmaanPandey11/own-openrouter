@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: path.resolve(import.meta.dirname, ".env") });
 
-import { PrismaClient } from "./generated/prisma/client";
+import { PrismaClient, Prisma } from "./generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({
@@ -14,3 +14,5 @@ const adapter = new PrismaPg({
 export const prisma = new PrismaClient({
   adapter,
 });
+
+export { Prisma };

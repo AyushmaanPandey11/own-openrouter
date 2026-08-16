@@ -5,9 +5,14 @@ import { Gemini } from "./providers/Gemini";
 import { Claude } from "./providers/Claude";
 import { OpenAi as OpenAiLlm } from "./providers/OpenAi";
 import { prisma } from "db";
-import { ModelName } from "../../../packages/db/generated/prisma/internal/prismaNamespace";
 import { LlmResponse } from "./providers/Base";
-import { responseToSetHeaders } from "elysia/adapter/utils";
+import { createHash } from "crypto";
+import { Prisma } from "db";
+
+function hashApiKey(rawKey: string): string {
+  return createHash("sha256").update(rawKey).digest("hex");
+}
+
 const app = new Elysia()
   .use(bearer())
   .post(
@@ -19,7 +24,7 @@ const app = new Elysia()
       // checking api key from db
       const doesExists = await prisma.apiKey.findUnique({
         where: {
-          apikey: apiKey,
+          keyHash: hashApiKey(apiKey!),
           isDeleted: false,
           isDisabled: false,
         },
@@ -65,47 +70,109 @@ const app = new Elysia()
       if (!modelProviderMapping) {
         set.status = 403;
         return {
-          message: `${ModelName} provider isn't available`,
+          message: `${modelDb.name} provider isn't available`,
         };
       }
       let response: LlmResponse;
-      switch (providerName) {
-        case inputProviderName.Anthropic:
-          response = await Claude.getInstance().chat(
-            providerModelName,
-            messages,
-          );
-          break;
-        case inputProviderName.Gemini:
-          response = await Gemini.getInstance().chat(
-            providerModelName,
-            messages,
-          );
-          break;
-        case inputProviderName.Openai:
-          response = await OpenAiLlm.getInstance().chat(
-            providerModelName,
-            messages,
-          );
-          break;
-        default:
-          response = await Gemini.getInstance().chat(
-            providerModelName,
-            messages,
-          );
+      try {
+        switch (providerName) {
+          case inputProviderName.Anthropic:
+            response = await Claude.getInstance().chat(
+              providerModelName,
+              messages,
+            );
+            break;
+          case inputProviderName.Gemini:
+            response = await Gemini.getInstance().chat(
+              providerModelName,
+              messages,
+            );
+            break;
+          case inputProviderName.Openai:
+            response = await OpenAiLlm.getInstance().chat(
+              providerModelName,
+              messages,
+            );
+            break;
+          default:
+            response = await Gemini.getInstance().chat(
+              providerModelName,
+              messages,
+            );
+        }
+      } catch (err) {
+        set.status = 502;
+        return { message: "Upstream provider error", detail: String(err) };
       }
-      // storing the conversation in the conversation table
-      const conversation = await prisma.conversation.create({
-        data: {
-          input: messages[0].content,
-          inputTokenCount: response.inputTokenConsumed,
-          outputTokenCount: response.outputTokenConsumed,
-          output: response.completions.choices[0].message.content,
-          apiKeyId: doesExists.id,
-          userId: doesExists.user.id,
-          modelProviderMappingId: modelProviderMapping.id,
+
+      if (!response.completions.choices?.[0]?.message?.content) {
+        set.status = 502;
+        return { message: "Provider returned an empty or invalid response" };
+      }
+
+      const cost =
+        response.inputTokenConsumed * modelProviderMapping.inputTokenCost +
+        response.outputTokenConsumed * modelProviderMapping.outputTokenCost;
+      let conversation;
+      try {
+        conversation = await prisma.$transaction([
+          prisma.user.update({
+            where: {
+              id: doesExists.user.id,
+              credits: { gte: cost },
+            },
+            data: {
+              credits: {
+                decrement: cost,
+              },
+            },
+          }),
+          prisma.apiKey.update({
+            where: {
+              id: doesExists.id,
+            },
+            data: {
+              creditsConsumed: {
+                increment: cost,
+              },
+              lastUsed: new Date(),
+            },
+          }),
+          prisma.conversation.create({
+            data: {
+              input: messages[0].content,
+              inputTokenCount: response.inputTokenConsumed,
+              outputTokenCount: response.outputTokenConsumed,
+              output: response.completions.choices[0].message.content,
+              apiKeyId: doesExists.id,
+              userId: doesExists.user.id,
+              modelProviderMappingId: modelProviderMapping.id,
+            },
+          }),
+        ]);
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2025"
+        ) {
+          set.status = 403;
+          return { message: "Insufficient credits for this request" };
+        }
+        set.status = 500;
+        return { message: "Internal error recording conversation" };
+      }
+
+      return {
+        id: conversation[2].id,
+        model,
+        choices: response.completions.choices,
+        usage: {
+          prompt_tokens: response.inputTokenConsumed,
+          completion_tokens: response.outputTokenConsumed,
+          total_tokens:
+            response.inputTokenConsumed + response.outputTokenConsumed,
         },
-      });
+      };
     },
     {
       body: ChatRequestSchema,

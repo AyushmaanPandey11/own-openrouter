@@ -1,4 +1,9 @@
+import { createHash } from "crypto";
 import { prisma } from "./index";
+
+async function hashApiKey(apiKey: string) {
+  return createHash("sha256").update(apiKey).digest("hex");
+}
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -131,12 +136,15 @@ async function main() {
     },
   });
 
-  // ---- ApiKeys ----
+  const aliceRawKey = "sk-dummy-alice-key-abc123";
+  const bobRawKey = "sk-dummy-bob-key-xyz789";
+
   const aliceKey = await prisma.apiKey.create({
     data: {
       userId: alice.id,
       name: "Alice's default key",
-      apikey: "sk-dummy-alice-key-abc123",
+      keyPrefix: aliceRawKey.slice(0, 8),
+      keyHash: await hashApiKey(aliceRawKey),
       creditsConsumed: 25,
     },
   });
@@ -144,7 +152,8 @@ async function main() {
     data: {
       userId: bob.id,
       name: "Bob's default key",
-      apikey: "sk-dummy-bob-key-xyz789",
+      keyPrefix: bobRawKey.slice(0, 8),
+      keyHash: await hashApiKey(bobRawKey),
       creditsConsumed: 5,
     },
   });

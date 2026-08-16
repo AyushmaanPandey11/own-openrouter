@@ -42,7 +42,7 @@ export const apiKey = new Elysia({ prefix: "/api-keys" })
   )
   .get(
     "/get",
-    async (userId) => {
+    async ({ userId }) => {
       const keys = await ApiKeyService.getApiKeys(Number(userId));
       return keys;
     },
@@ -95,7 +95,6 @@ export const apiKey = new Elysia({ prefix: "/api-keys" })
       }
     },
     {
-      body: ApikeysModel.deleteApiKeySchema,
       response: {
         200: ApikeysModel.deleteApiKeyResponseSchema,
         411: ApikeysModel.updateApiKeyResponseFailedSchema,
